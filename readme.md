@@ -1,6 +1,8 @@
-# RazorCap API Wrapper
+# Unofficial RazorCap API Wrapper
 
 Multi-language API wrapper for RazorCap's hCaptcha solving service. Available in Python, TypeScript, JavaScript, and Go.
+
+> **Note**: This is an unofficial implementation and is not affiliated with, endorsed by, or connected to RazorCap in any way.
 
 ## Features
 
@@ -167,4 +169,8 @@ All implementations include comprehensive error handling for:
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## Disclaimer
+
+This project is not affiliated with, endorsed by, or connected to RazorCap in any way. This is an unofficial implementation created by the community. Use at your own risk.
 
