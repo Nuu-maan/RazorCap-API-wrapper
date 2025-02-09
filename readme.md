@@ -4,6 +4,8 @@ Multi-language API wrapper for RazorCap's hCaptcha solving service. Available in
 
 > **Note**: This is an unofficial implementation and is not affiliated with, endorsed by, or connected to RazorCap in any way.
 
+---
+
 ## Features
 
 - Support for both Basic and Enterprise hCaptcha types
@@ -12,14 +14,18 @@ Multi-language API wrapper for RazorCap's hCaptcha solving service. Available in
 - Comprehensive error handling
 - Modern async/await support
 - Well-documented API methods
+- Direct and module-based methods for flexibility
+
+---
 
 ## Installation
 
 Clone the repository:
-```bash
+```BASH
 git clone https://github.com/Nuu-maan/RazorCap-API-wrapper.git
 cd RazorCap-API-wrapper
 ```
+---
 
 ### Python
 Copy the `python/razorcap.py` file to your project.
@@ -30,10 +36,19 @@ Copy either the `typescript/razorcap.ts` or `javascript/razorcap.js` file to you
 ### Go
 Copy the `go/razorcap` directory to your project.
 
+---
+
 ## Usage
 
+### Folder Structure
+Each language folder contains two files:
+1. `index`: Direct method implementation.
+2. `main`: Module-based method implementation.
+
+---
+
 ### Python
-```bash
+```BASH
 from razorcap import RazorCapAPI, HCaptchaType, HCaptchaTaskData
 
 # Initialize the client
@@ -53,9 +68,10 @@ response = api.create_task(task_data, HCaptchaType.BASIC)
 result = await api.wait_for_result(response['task_id'])
 print(result['response_key'])
 ```
+---
 
 ### TypeScript
-```bash
+```BASH
 import { RazorCapAPI, HCaptchaType } from './razorcap';
 
 const api = new RazorCapAPI('your_api_key');
@@ -73,9 +89,10 @@ async function solveCaptcha() {
     console.log(result.response_key);
 }
 ```
+---
 
 ### JavaScript
-```bash
+```BASH
 const { RazorCapAPI, HCaptchaType } = require('./razorcap');
 
 const api = new RazorCapAPI('your_api_key');
@@ -93,9 +110,10 @@ async function solveCaptcha() {
     console.log(result.response_key);
 }
 ```
+---
 
 ### Go
-```bash
+```BASH
 package main
 
 import (
@@ -126,6 +144,7 @@ func main() {
     fmt.Println(result.ResponseKey)
 }
 ```
+---
 
 ## API Reference
 
@@ -154,6 +173,8 @@ Parameters:
 - `maxAttempts`: Maximum number of polling attempts (default: 60)
 - `delay`: Delay between attempts in milliseconds/seconds (default: 5000ms/5s)
 
+---
+
 ## Error Handling
 
 All implementations include comprehensive error handling for:
@@ -162,6 +183,46 @@ All implementations include comprehensive error handling for:
 - Timeout errors
 - Task-specific errors
 
+---
+### API Endpoints
+
+#### Create a New Task
+- **POST** `https://api.razorcap.xyz/create_task`
+- **Body**:
+```bash
+{
+  "key": "api_key", // RazorCap API key
+  "type": "hcaptcha_basic", // hcaptcha_basic or enterprise only
+  "data": {
+    "sitekey": "a9b5fb07-92ff-493f-86fe-352a2803b3df", // Website's sitekey
+    "siteurl": "discord.com", // Site URL must be in this format
+    "proxy": "http://user:pass@ip:port", // Proxy format: http://user:pass@ip:port or ip:port
+    "rqdata": "captcha_rqdata" // Optional
+  }
+}
+```
+
+**Response**:
+```bash
+{
+  "price": "0.003", 
+  "status": "solving", 
+  "task_id": "task_id" // Task ID (integer)
+}
+```
+
+#### Get Result of the Task
+- **GET** `https://api.razorcap.xyz/get_result/{task_id}`
+  
+**Response**:
+```bash
+{
+  "response_key": "P1_eyJ0eXAiOiJKV1QiLCJhbGciOiJIU...", 
+  "status": "solved" // Status options: solved, solving, error
+}
+```
+----
+
 ## Contributing
 
 1. Fork the repository
@@ -169,6 +230,8 @@ All implementations include comprehensive error handling for:
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+---
 
 ## Disclaimer
 
