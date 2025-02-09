@@ -131,6 +131,7 @@ type WaitOptions struct {
     Delay       time.Duration
 }
 
+
 // DefaultWaitOptions returns the default polling configuration
 func DefaultWaitOptions() WaitOptions {
     return WaitOptions{
