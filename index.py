@@ -2,14 +2,16 @@ from enum import Enum
 import requests
 from typing import Dict, Optional, Union
 from dataclasses import dataclass
+import asyncio
 
 class HCaptchaType(Enum):
-    """Available hCaptcha task types"""
+    """Types of hCaptcha tasks you can solve"""
     BASIC = "hcaptcha_basic"
     ENTERPRISE = "hcaptcha_enterprise"
 
 @dataclass
 class HCaptchaTaskData:
+    """Container for hCaptcha solving parameters"""
     sitekey: str
     siteurl: str
     proxy: str
@@ -17,101 +19,90 @@ class HCaptchaTaskData:
 
 class RazorCapAPI:
     """
-    Python wrapper for the RazorCap API, providing easy access to hCaptcha solving services.
+    Simple hCaptcha solving client for RazorCap API
+    
+    Usage:
+    ------
+    # Sync solution (basic)
+    api = RazorCapAPI("your_api_key")
+    task_data = HCaptchaTaskData(sitekey="...", siteurl="...", proxy="...")
+    task = api.create_task(task_data)
+    result = api.check_result(task['task_id'])
+    
+    # Async solution (recommended)
+    async def solve_captcha():
+        api = RazorCapAPI("your_api_key")
+        task = api.create_task(task_data)
+        return await api.wait_for_result(task['task_id'])
+    
+    asyncio.run(solve_captcha())
     """
     
     BASE_URL = "https://api.razorcap.xyz"
     
     def __init__(self, api_key: str):
-        """
-        Initialize the RazorCap API wrapper.
-        
-        Args:
-            api_key (str): Your RazorCap API key
-        """
         self.api_key = api_key
         
     def create_task(self, 
-                    task_data: HCaptchaTaskData, 
-                    task_type: HCaptchaType = HCaptchaType.BASIC) -> Dict[str, Union[str, int]]:
+                   task_data: HCaptchaTaskData, 
+                   task_type: HCaptchaType = HCaptchaType.BASIC) -> Dict:
         """
-        Create a new hCaptcha solving task.
+        Start a new captcha solving task
         
-        Args:
-            task_data (HCaptchaTaskData): Task configuration data
-            task_type (HCaptchaType): Type of hCaptcha task (BASIC or ENTERPRISE)
-            
-        Returns:
-            dict: Response containing task_id, price, and status
-            
-        Raises:
-            requests.exceptions.RequestException: If the API request fails
+        Example:
+        -------
+        task_data = HCaptchaTaskData(
+            sitekey="sitekey_value",
+            siteurl="https://example.com",
+            proxy="http://user:pass@ip:port"
+        )
+        task = api.create_task(task_data)
+        print(f"Created task {task['task_id']}, cost: {task['price']} credits")
         """
-        endpoint = f"{self.BASE_URL}/create_task"
-        
-        payload = {
-            'key': self.api_key,
-            'type': task_type.value,
-            'data': {
-                'sitekey': task_data.sitekey,
-                'siteurl': task_data.siteurl,
-                'proxy': task_data.proxy,
+        response = requests.post(
+            f"{self.BASE_URL}/create_task",
+            json={
+                'key': self.api_key,
+                'type': task_type.value,
+                'data': {
+                    'sitekey': task_data.sitekey,
+                    'siteurl': task_data.siteurl,
+                    'proxy': task_data.proxy,
+                    'rqdata': task_data.rqdata
+                }
             }
-        }
-        
-        if task_data.rqdata:
-            payload['data']['rqdata'] = task_data.rqdata
-            
-        response = requests.post(endpoint, json=payload)
+        )
         response.raise_for_status()
-        
         return response.json()
     
-    def get_task_result(self, task_id: int) -> Dict[str, str]:
-        """
-        Get the result of a specific task.
-        
-        Args:
-            task_id (int): ID of the task to check
-            
-        Returns:
-            dict: Response containing status and response_key if solved
-            
-        Raises:
-            requests.exceptions.RequestException: If the API request fails
-        """
-        endpoint = f"{self.BASE_URL}/get_result/{task_id}"
-        
-        response = requests.get(endpoint)
+    def check_result(self, task_id: int) -> Dict:
+        """Check if solution is ready (instant response)"""
+        response = requests.get(f"{self.BASE_URL}/get_result/{task_id}")
         response.raise_for_status()
-        
         return response.json()
 
-    async def wait_for_result(self, task_id: int, max_attempts: int = 60, delay: int = 5) -> Dict[str, str]:
+    async def wait_for_result(self, 
+                             task_id: int, 
+                             max_wait: int = 300, 
+                             check_interval: int = 5) -> Dict:
         """
-        Wait for task completion with polling.
+        Wait for captcha solution (non-blocking async)
         
-        Args:
-            task_id (int): ID of the task to check
-            max_attempts (int): Maximum number of polling attempts
-            delay (int): Delay between attempts in seconds
-            
-        Returns:
-            dict: Final task result
-            
-        Raises:
-            TimeoutError: If max_attempts is reached without a solution
+        Example:
+        -------
+        async def my_app():
+            result = await api.wait_for_result(task_id)
+            print(f"Captcha token: {result['response_key']}")
         """
-        import asyncio
-        
-        for _ in range(max_attempts):
-            result = self.get_task_result(task_id)
+        start_time = asyncio.get_event_loop().time()
+        while (asyncio.get_event_loop().time() - start_time) < max_wait:
+            result = await asyncio.to_thread(self.check_result, task_id)
             
             if result['status'] == 'solved':
                 return result
             elif result['status'] == 'error':
-                raise Exception(f"Task failed: {result.get('error', 'Unknown error')}")
-                
-            await asyncio.sleep(delay)
+                raise Exception(f"Solving failed: {result.get('error', 'Unknown error')}")
             
-        raise TimeoutError(f"Task {task_id} did not complete within the allowed time")
+            await asyncio.sleep(check_interval)
+        
+        raise TimeoutError(f"No solution after {max_wait} seconds")
