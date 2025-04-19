@@ -38,7 +38,7 @@ class RazorCapAPI:
     asyncio.run(solve_captcha())
     """
     
-    BASE_URL = "https://api.razorcap.xyz"
+    BASE_URL = "https://api.razorcap.me"
     
     def __init__(self, api_key: str):
         self.api_key = api_key
@@ -53,7 +53,7 @@ class RazorCapAPI:
         -------
         task_data = HCaptchaTaskData(
             sitekey="sitekey_value",
-            siteurl="https://example.com",
+            siteurl="example.com",
             proxy="http://user:pass@ip:port"
         )
         task = api.create_task(task_data)
